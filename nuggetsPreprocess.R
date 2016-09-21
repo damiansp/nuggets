@@ -48,7 +48,7 @@ for (i in 1:dim(data)[2]) {
 
 # Observations:
 # These are time series, and time is clearly an important element
-# Each record is a week's data; ordered temporally (top dates = most recent)
+# Each record is a week's data; ordered temporally (top dates = oldest)
 
 # Binary variables (change to categorical vars):
 # highseason, holiday, autoenroll, socialperson*, promoteposts*, learner
@@ -79,11 +79,17 @@ data$promoteposts[data$promoteposts == 10] <- NA
 
 # Convert binary data to categorical 
 data$highseason <- as.factor(data$highseason)
+levels(data$highseason) <- c('n', 'y')
 data$holiday <- as.factor(data$holiday)
+levels(data$holiday) <- c('n', 'y')
 data$autoenroll <- as.factor(data$autoenroll)
+levels(data$autoenroll) <- c('n', 'y')
 data$socialperson <- as.factor(data$socialperson)
+levels(data$socialperson) <- c('n', 'y')
 data$promoteposts <- as.factor(data$promoteposts)
+levels(data$promoteposts) <- c('n', 'y')
 data$learner <- as.factor(data$learner)
+levels(data$learner) <- c('n', 'y')
 
 
 # Convert 'Week' to Date type
