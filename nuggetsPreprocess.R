@@ -79,17 +79,11 @@ data$promoteposts[data$promoteposts == 10] <- NA
 
 # Convert binary data to categorical 
 data$highseason <- as.factor(data$highseason)
-levels(data$highseason) <- c('n', 'y')
 data$holiday <- as.factor(data$holiday)
-levels(data$holiday) <- c('n', 'y')
 data$autoenroll <- as.factor(data$autoenroll)
-levels(data$autoenroll) <- c('n', 'y')
 data$socialperson <- as.factor(data$socialperson)
-levels(data$socialperson) <- c('n', 'y')
 data$promoteposts <- as.factor(data$promoteposts)
-levels(data$promoteposts) <- c('n', 'y')
 data$learner <- as.factor(data$learner)
-levels(data$learner) <- c('n', 'y')
 
 
 # Convert 'Week' to Date type
@@ -118,10 +112,11 @@ hist(diff(data$revenue))
 shapiro.test(diff(data$revenue))
 
 # Add some potentially useful variables to deal with temporal AC
-data$diff1 <- c(NA, diff(data$revenue))
-data$diff2 <- c(rep(NA, 2), diff(data$revenue, difference = 2))
-data$diff3 <- c(rep(NA, 3), diff(data$revenue, difference = 3))
-data$diff4 <- c(rep(NA, 4), diff(data$revenue, difference = 4))
+data$rev1weekAgo <- c(NA,         data$revenue[1:116])
+data$rev2weekAgo <- c(rep(NA, 2), data$revenue[1:115])
+data$rev3weekAgo <- c(rep(NA, 3), data$revenue[1:114])
+data$rev4weekAgo <- c(rep(NA, 4), data$revenue[1:113])
+
 
 # Make sure all weeks are evenly spaced (no gaps)
 diff(data$Week)
