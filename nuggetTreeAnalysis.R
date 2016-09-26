@@ -21,7 +21,8 @@ dataTree <- read.csv(
   '~/Desktop/cbtnuggetsbusinessanalyticsproject/dataCleanNoOutlier.csv')
 
 # Store current best from previous analyses
-currentBest <- list(mod = 'modTr.lm2', sse = 7616808500) # Found in nuggetAnalysis3.R
+currentBest <- list(mod = 'modTr.lm2', sse = 7616808500) 
+# Found in nuggetAnalysis3.R
 
 # Seed random number generator
 set.seed(11)
@@ -42,7 +43,7 @@ rescale <- function(x) {
 	return (x)
 }
 
-for (i in 3:ncol(dataTree)) {
+for (i in 2:ncol(dataTree)) {
   if (class(dataTree[, i]) != 'factor') {
     dataTree[, i] <- rescale(dataTree[, i])
   }
@@ -128,6 +129,15 @@ mod.tree
 plot(mod.tree)
 text(mod.tree, cex = 0.6)
 
+sse <- function(preds, actual) {
+  return (sum((preds - actual)^2))
+}
+
+mod.tree.p <- predict(mod.tree, newdata = testTree)
+(mod.tree.sse <- sse(mod.tree.p, testTree$revenue)) # 1.7709e+10
+
+currentBest # not as good
+
 # Examine the cross-validation error at different levels of complexity in the 
 # tree
 mod.tree2 <- rpart(revenue ~ ., data = trainTree, cp = 0.001)
@@ -137,9 +147,13 @@ plotcp(mod.tree2)
 # The CV error reaches a minimum at a complexity cutoff of 0.094
 printcp(mod.tree2)
 
-mod.tree2.prune <- prune(mod.tree2, 0.055)
+mod.tree2.prune <- prune(mod.tree2, 0.019)
 plot(mod.tree2.prune)
 text(mod.tree2.prune, cex = 0.7)
+
+mod.tree2.prune.p <- predict(mod.tree2.prune, newdata = trainTree)
+(mod.tree2.sse <- sse(mod.tree2.prune.p, trainTree$revenue)) # 1.1756e+10
+currentBest
 
 # As this is still ultimately a regression model, we can perform the same 
 # diagnostics, and use the sum of squared errors (SSE) as a metric of goodness of 
@@ -151,27 +165,12 @@ plot(predict(mod.tree2.prune),
 qqnorm(resid(mod.tree2.prune))
 qqline(resid(mod.tree2.prune))
 
-mod.tree2.prune.p <- predict(mod.tree2.prune, newdata = trainTree)
-
-sse <- function(preds, actual) {
-  return (sum((preds - actual)^2))
-}
-
-(mod.tree2.sse <- sse(mod.tree2.prune.p, trainTree$revenue)) # 1.7116e+10
-currentBest
-
 # This model is nowhere near as good as our best regression model, but given that 
-# it is essentially using just 3 variables as binary values, it is actually doing 
-# pretty well.  We might now try combining the models.  There are a couple of 
-# approaches that we could take.  We can use an ensemble model, or alternately, 
-# we can try looking at each of the 4 partitions that the tree model splits the 
-# data into, and fitting a different regression model on each.  The problem with
-# the latter approach is that there are already few rows of data relative to the 
-# number of predictors, so the ensemble method may be the better approach in this 
-# case.
+# it is using 5 of the variables, it is actually doing pretty well.  
 
-# The ensemble method will be carried out in a Python notebook... Save the 
-# preprocessed data to make them accessible.
+# Next, an ensemble method will be carried out in a Python notebook, to attempt 
+# to merge the two models.
+# Save the preprocessed data to make them accessible.
 write.csv(dataTree, 
           '~/Desktop/cbtnuggetsbusinessanalyticsproject/dataFinal.csv')
 
