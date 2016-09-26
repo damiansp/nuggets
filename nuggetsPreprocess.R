@@ -134,7 +134,22 @@ data[52 + 47:49, c('Week', 'weekOfYear')]
 # Visualize
 plot(data$revenue, type = 'l')
 lines(80000 + 100 * weekOfYear, col = 4)
-abline(v = which(weekOfYear == 1), col = 2) # firs week of each yr
+abline(v = which(weekOfYear == 1), col = 2) # first week of each yr
+
+
+# Add potentially useful transformations of the variables 
+# (See nuggetAnalysis.R for explanation)
+data$fbengage3 <- data$fbengage^3
+data$logSocialpostlag <- (data$socialpostlag)
+data$organicnew2 <- data$organicnew^2
+data$logOrganicnew <- log(data$organicnew)
+data$blognewusers2 <- data$blognewusers^2
+data$blognewusersRecip <- 1 / data$blognewusers
+data$Fbpostimplag2 <- data$Fbpostimplag^2
+data$weekOfYear2 <- data$weekOfYear^2
+data$sinWeekOfYear <- sin(pi * (data$weekOfYear + 13) / 26)
+data$Twpostimp2 <- data$Twpostimp^2
+data$logTwpostimp <- log(data$Twpostimp)
 
 # Store cleaned data
 write.csv(data, '~/Desktop/cbtnuggetsbusinessanalyticsproject/dataClean.csv')
