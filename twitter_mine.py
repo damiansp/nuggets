@@ -2,10 +2,10 @@ from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler, Stream
 
 # My API keys in twitterAPIKeys.txt
-API_key = 'insert your API key here'
-API_secret = 'insert your API secret here'
-access_token = 'insert your access token here'
-access_token_secret = 'insert your access token secret here'
+API_key = '<insert yours here>'
+API_secret = '<insert yours here>'
+access_token = '<insert yours here>'
+access_token_secret = '<insert yours here>'
 
 keywords = ['Cisco', 'CCNA', 'AWS', 'Sharepoint', 'linux', 'powershell',
             'itil', 'sql', 'azure', 'ceh']

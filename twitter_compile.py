@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import re
 
-path_to_data = 'nuggets1002.json' # use smaller file for development
+path_to_data = 'nuggets5k.json' # use smaller file for development
 tweet_data = []
 tweet_file = open(path_to_data, 'r')
 #n_errors = 0
@@ -57,6 +57,5 @@ for word in keywords:
 
 # Write DataFrame to .csv for potential further processing
 # Note: encoding defaults to ascii, but will throw error if non-ascii text
-# found (e.g., international text as found here):
-print df['text'][4]
+# found (e.g., international text):
 df.to_csv('twitter.csv', encoding = 'utf-8') 
