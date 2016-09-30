@@ -13,7 +13,7 @@ rm(list = ls())
 library(rpart) # for rpart() tree modeling 
 
 # Load any data stored from previous session
-load('~/Desktop/cbtnuggetsbusinessanalyticsproject/nuggets4.RData')
+load('~/Desktop/cbtnuggetsbusinessanalyticsproject/nuggetsTree.RData')
 
 # Start by removing the additional outliers, and transforming long-tailed 
 # distributions as before
@@ -174,4 +174,4 @@ qqline(resid(mod.tree2.prune))
 write.csv(dataTree, 
           '~/Desktop/cbtnuggetsbusinessanalyticsproject/dataFinal.csv')
 
-save.image('~/Desktop/cbtnuggetsbusinessanalyticsproject/nuggets4.RData')
+save.image('~/Desktop/cbtnuggetsbusinessanalyticsproject/nuggetsTree.RData')
