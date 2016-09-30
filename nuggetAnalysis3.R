@@ -913,7 +913,7 @@ bestInteractionModTr1.p <- predict(bestInteractionModTr1, test3Tr)
 # 1.4465e+12
 currentBest$sse  # NO improvement
 
-# The current best model, modTr.lm3, has an average error of 
+# The current best model, mod.lm3, has an average error of 
 (sqrt(modTr.lm3.sse / nrow(test3Tr)))
 # $16,424.89 or about 11% of the mean revenue, and less than the standard 
 # deviation of 
@@ -933,7 +933,7 @@ train3Trnum[, 'Week'] <- as.numeric(train3Trnum[, 'Week'])
 test3Trnum[, 'Week'] <- as.numeric(test3Trnum[, 'Week'])
 
 
-# ModTrel as ridge regression: All predictors including all 2-way interactions
+# Model as ridge regression: All predictors including all 2-way interactions
 par(mfrow = c(1, 1))
 lambdas <- c(0, 10^(0:5))
 modTr.ridge1 <- lm.ridge(revenue ~ .^2, lambda = lambdas, data = train3Trnum)
@@ -949,7 +949,7 @@ modTr.ridge3 <- lm.ridge(revenue ~ .^2, lambda = lambdas, data = train3Trnum)
 plot(modTr.ridge3$GCV ~ lambdas, type = 'l')
 
 
-# construct df equivalent to modTrel matrix used in modTr.ridge3
+# construct df equivalent to model matrix used in mod.ridge3
 test3TrnumInter <- test3Trnum
 
 for (i in 2:(ncol(test3Trnum) - 1)) {
@@ -1121,7 +1121,7 @@ summary(modTr.lm2)
 
 
 
-# NEXT:
+# NEXT (in Python):
 # TREE
 # REG/TREE ENSEMBLE
 
