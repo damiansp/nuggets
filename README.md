@@ -2,8 +2,10 @@
 Sample work for CBT Nuggets
 
 This assignment had two main components:
+
 (1) Mining data from Twitter
-(2) Analyzing revenued data.
+
+(2) Analyzing revenue data.
 
 Work done on each is organized into the 'twitter' and 'revenue' directories respectively.
 
