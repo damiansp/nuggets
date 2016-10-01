@@ -17,6 +17,11 @@ followed sequentially.
 For those who want to cut straight to the chase, for the revenue question, the best model was found in the last file 
 (7_ML_nuggets2.ipynb), and is in the section obviously marked "Final Model".
 
+7_ML_nuggest2.ipynb also contains a section, "Test New Data" that automates the
+testing of new data, assuming that it has the same column names as the original
+data, and has had missing data replaced with 'NA' values (without single
+quotes).
+
 Please feel free to contact me if you have any follow up questions.
 
 Thank you all for your time and I look forward to hearing more from you.
