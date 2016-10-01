@@ -21,7 +21,7 @@ library(sm)
 #   moved 'revenue' (response var) to first field to be consistent with R
 #   commands, e.g. lm(y ~)
 
-data <- read.csv('~/Desktop/cbtnuggetsbusinessanalyticsproject/data.csv')
+data <- read.csv('~/Desktop/cbtnuggetsbusinessanalyticsproject/revenue/data.csv')
 dim(data) # 117 records, 42 vars
 # summary(data)
 
@@ -139,7 +139,7 @@ abline(v = which(weekOfYear == 1), col = 2) # first week of each yr
 
 # Add potentially useful transformations of the variables 
 # (See nuggetAnalysis.R for explanation)
-data$fbengage3 <- data$fbengage^3
+data$fbEngage3 <- data$fbengage^3
 data$logSocialpostlag <- (data$socialpostlag)
 data$organicnew2 <- data$organicnew^2
 data$logOrganicnew <- log(data$organicnew)
@@ -152,7 +152,7 @@ data$Twpostimp2 <- data$Twpostimp^2
 data$logTwpostimp <- log(data$Twpostimp)
 
 # Store cleaned data
-write.csv(data, '~/Desktop/cbtnuggetsbusinessanalyticsproject/dataClean.csv')
+write.csv(data, '~/Desktop/cbtnuggetsbusinessanalyticsproject/revenue/dataClean.csv')
 
 # For "outliers" that may be legitimate data (i.e., not input error), we will 
 # want to test models both with the data (assuming that they are correct), and 
@@ -188,13 +188,7 @@ plot(data$Fbengage)
 
 write.csv(
   data, 
-  '~/Desktop/cbtnuggetsbusinessanalyticsproject/dataCleanNoOutlier.csv')
-
-
-
-
-
-
+  '~/Desktop/cbtnuggetsbusinessanalyticsproject/revenue/dataCleanNoOutlier.csv')
 
 
 # Further Exploration

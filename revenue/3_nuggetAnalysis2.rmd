@@ -1,0 +1,345 @@
+Analysis 2
+==========
+
+This script repeats many of the procedures found in Analysis 1, but using the data file with outliers removed.
+
+The initial code is as before, so no comments will be provided.
+```{r head_imports}
+#=============================================================#
+#                                                             #
+# Analyze the CBT Nuggets Test Data Set - Outliers removed    #
+# @author: Damian Satterthwaite-Phillips <damiansp@gmail.com> #
+# @version: 23 Sep 2016                                       #
+#                                                             #
+#=============================================================#
+
+# Clear workspace
+rm(list = ls())
+
+# Load libraries (assumes they have been installed)
+library(mgcv) # for gam() 
+library(nlme) # for gls()
+
+# Load any data stored from previous session
+load('~/Desktop/cbtnuggetsbusinessanalyticsproject/revenue/nuggets2.RData')
+
+# Store current best from previous files
+currentBest <- list(mod = 'mod.lm2.outliersIn', sse = 13724509546)
+
+# Outliers replaced with NAs
+data2 <- read.csv(
+  '~/Desktop/cbtnuggetsbusinessanalyticsproject/revenue/dataCleanNoOutlier.csv')
+  
+# Seed random number generator
+set.seed(11)
+
+# Convert binary data to categorical 
+data2$highseason   <- as.factor(data2$highseason)
+data2$holiday      <- as.factor(data2$holiday)
+data2$autoenroll   <- as.factor(data2$autoenroll)
+data2$socialperson <- as.factor(data2$socialperson)
+data2$promoteposts <- as.factor(data2$promoteposts)
+data2$learner      <- as.factor(data2$learner)
+
+# Convert 'Week' to Date type
+data2$Week <- as.Date(data2$Week, format = '%m/%d/%y')
+
+
+# Scale numerical data; DO NOT SCALE RESPONSE
+# Rescale so all values are on the interval [0, 1]
+rescale <- function(x) {
+	x <- x - min(x, na.rm = T)
+	x <- x / max(x, na.rm = T)  
+	return (x)
+}
+
+for (i in 3:ncol(data2)) {
+  if (class(data2[, i]) != 'factor') {
+    data2[, i] <- rescale(data2[, i])
+  }
+}
+
+# Split data into train and test sets
+# Put 29 rows (~25%) aside in test set
+test2.inds <- sort(sample(1:nrow(data2), size = 29))
+
+# In the test set, in order to be able to make predictions if there are NAs,
+# replace NA's with values; Since these are time series with clear temporal 
+# autocorrelation, simplify by filling with the data from the previous date
+for (j in 2:ncol(data2)) {
+  for (i in 1:nrow(data2)) {
+  	if (i %in% test2.inds & is.na(data2[i, j])) {
+  	  if (i == 1) {
+  	  	# first row has no prior date; use following
+  	  	data2[i, j] <- data2[i + 1, j]
+  	  } else {
+  	    data2[i, j] <- data2[i - 1, j]
+  	  }
+  	} 	
+  }
+}
+
+test2 <- data2[test2.inds, ]
+train2 <- data2[-test2.inds, ]
+
+# Fill remaining NAs
+test2$rev2weekAgo[1:2] <- test2$rev2weekAgo[3]
+test2$rev3weekAgo[1:2] <- test2$rev3weekAgo[3]
+test2$rev4weekAgo[1:2] <- test2$rev4weekAgo[3]
+```
+
+
+### Basic linear model
+Just as a baseline, do a simple linear model and check its predictions on the test2 set as a "score-to-beat"
+
+```{r lm1}
+mod.lm1 <- lm(revenue ~ ., data = train2) 
+summary(mod.lm1)
+
+# Remove linearly dependent variables, in order to be able to use predict
+mod.lm1 <- update(mod.lm1, 
+                  . ~ . - weekno - Fbpageimp - Twpostimp - logSocialpostlag - 
+                  logOrganicnew - blognewusers2 - blognewusersRecip - Fbpostimplag2 
+                  - weekOfYear2 - sinWeekOfYear - Twpostimp2 - logTwpostimp)
+summary(mod.lm1)
+mod.lm1.p <- predict(mod.lm1, newdata = test2)
+
+# Compare predictions to actual values
+cbind(mod.lm1.p, test2$revenue)
+
+# Metric for quantifying fit (sum of squared error)
+sse <- function(preds, actual) {
+  return (sum((preds - actual)^2))
+}
+
+(mod.lm1.sse <- sse(mod.lm1.p, test2$revenue)) # 2.0267e+12
+
+# To think about this number in terms of our response variable, we can calculate the
+# average error:
+sqrt(mod.lm1.sse / nrow(test2))
+sd(data2$revenue)
+
+# i.e., the average error in the predictions is $264,359; considerably more than the sd.  Obviously a poor fit.
+
+# Check model against previous best
+currentBest$sse     # 1.3725e+10
+```
+
+
+### Reduce model to prevent overfitting
+```{r lm2}
+mod.lm2 <- step(mod.lm1, direction = 'both', trace = 0)
+mod.lm2 <- update(mod.lm1, . ~ . - brandpaid)
+mod.lm2 <- step(mod.lm2, direction = 'both', trace = 0)
+mod.lm2 <- update(mod.lm2, . ~ . - socialpostimp - socialperson)
+mod.lm2 <- step(mod.lm2, direction = 'both', trace = 0)
+mod.lm2 <- update(mod.lm2, . ~ . - emailclick - nonbrandclicks)
+mod.lm2 <- step(mod.lm2, direction = 'both', trace = 0)
+mod.lm2 <- update(mod.lm2, . ~ . - learner - socialimp)
+mod.lm2 <- step(mod.lm2, direction = 'both', trace = 0)
+mod.lm2 <- update(mod.lm2, 
+                  . ~ . - rev2weekAgo - rev3weekAgo - brandclicks)
+mod.lm2 <- step(mod.lm2, direction = 'both', trace = 0)
+mod.lm2 <- update(mod.lm2, . ~ . - displayimp)
+mod.lm2 <- step(mod.lm2, direction = 'both', trace = 0)
+mod.lm2 <- update(mod.lm2, . ~ . - Fblikes - rev4weekAgo)
+mod.lm2 <- step(mod.lm2, direction = 'both', trace = 0)
+mod.lm2 <- update(mod.lm2, . ~ . - blognewusers)
+mod.lm2 <- step(mod.lm2, direction = 'both', trace = 0)
+mod.lm2 <- update(mod.lm2, . ~ . - emailsent)
+mod.lm2 <- step(mod.lm2, direction = 'both', trace = 0)
+mod.lm2 <- update(mod.lm2, . ~ . - twengage - fbposts)
+mod.lm2 <- step(mod.lm2, direction = 'both', trace = 0)
+mod.lm2 <- update(mod.lm2, . ~ . - nonbrandpaid)
+mod.lm2 <- step(mod.lm2, direction = 'both', trace = 0)
+mod.lm2 <- update(mod.lm2, . ~ . - blogvisits)
+mod.lm2 <- step(mod.lm2, direction = 'both', trace = 0)
+mod.lm2 <- update(mod.lm2, . ~ . - weekOfYear - twposts - organicnew - emailopen)
+mod.lm2 <- step(mod.lm2, direction = 'both', trace = 0)
+mod.lm2 <- update(mod.lm2, . ~ . - displaylag)
+mod.lm2 <- step(mod.lm2, direction = 'both', trace = 0)
+summary(mod.lm2)
+mod.lm2.p <- predict(mod.lm2, newdata = test2)
+(mod.lm2.sse <- sse(mod.lm2.p, test2$revenue)) # 9.4992e+9
+sqrt(mod.lm2.sse / nrow(test2))
+
+# Check against current best
+currentBest$sse
+
+# A better model already... Replace
+currentBest <- list(mod = 'mod.lm2', sse = mod.lm2.sse)
+
+
+# Add in the variables that could not be explored in the initial model
+mod.lm3 <- update(mod.lm2, 
+                  . ~ . + weekno + Fbpageimp + Twpostimp + logSocialpostlag + 
+                  logOrganicnew + blognewusers2 + blognewusersRecip + Fbpostimplag2 
+                  + weekOfYear2 + sinWeekOfYear + Twpostimp2 + logTwpostimp)
+# And reduce again
+mod.lm3 <- step(mod.lm3, direction = 'both', trace = 0)
+mod.lm3 <- update(mod.lm3, 
+                  . ~ . - Fbpostimplag2 - blognewusers2 - logTwpostimp - 
+                  logOrganicnew - blogrefernew)
+mod.lm3 <- step(mod.lm3, direction = 'both', trace = 0)
+summary(mod.lm3)
+
+mod.lm3.p <- predict(mod.lm3, newdata = test2)
+(mod.lm3.sse <- sse(mod.lm3.p, test2$revenue)) # 8.8486e+9
+sqrt(mod.lm3.sse / nrow(test2))
+
+currentBest$sse  # Improved again
+currentBest <- list(mod = 'mod.lm3', sse = mod.lm3.sse)
+```
+
+### Explore potential interaction terms
+```{r interaction}
+# Do not include binary variables at this point
+binVars <- c(
+  'highseason', 'holiday', 'autoenroll', 'socialperson', 'promoteposts', 'learner')
+predictors <- predictors[-which(predictors %in% binVars)]
+
+# Also exclude Week, weekno from predictors here, as these will always be unique
+# values (never repeated), so we don't want extrapolate 
+predictors <- predictors[-c(1, 2)]
+
+#bestAIC <- c(Inf, Inf, Inf)
+#bestInteractionMods <-  c('', '', '')
+iterations <- 10 # limited to 10 for knitting purposes
+
+for (i in 1:iterations) {
+  sampP <- c()
+  dfRemaining <- sample(50, 1)
+
+  while (dfRemaining > 0) { 
+  	preds <- sort(sample(predictors, 2))
+  	preds[3] <- paste(preds[1], preds[2], sep = ':')
+  	
+  	for (p in preds) {
+  	  if (!(p %in% sampP)) {
+  	  	sampP <- c(sampP, p)
+  	  	dfRemaining <- dfRemaining - 1	
+  	  }	
+  	}
+  }
+  
+  if (length(sampP) > 50) {
+  	sampP <- sampP[-c(50:length(sampP))]
+  }
+
+  form <- 'revenue ~'
+
+  for (p in sampP) { 
+    form <- paste(form, p, sep = ' + ')
+  }
+
+  mod <- lm(as.formula(form), data = train2)
+  summary(mod)
+  aic <- extractAIC(mod)[2]
+  
+  if (aic == -Inf) { 
+  	# bad model
+  	continue 
+  } else {
+    if (aic < bestAIC[3]) {
+  	  if (aic < bestAIC[2]) {
+        if (aic < bestAIC[1]) {
+  	      # insert in first place, bump others
+  	      bestAIC[3] <- bestAIC[2]
+  	      bestAIC[2] <- bestAIC[1]
+  	      bestAIC[1] <- aic
+  	      bestInteractionMods[3] <- bestInteractionMods[2]
+  	      bestInteractionMods[2] <- bestInteractionMods[1]
+  	      bestInteractionMods[1] <- form
+  	    } else { 
+  	      # insert in second place, bump other
+  	      bestAIC[3] <- bestAIC[2]
+  	      bestAIC[2] <- aic
+  	      bestInteractionMods[3] <- bestInteractionMods[2]
+  	      bestInteractionMods[2] <- form
+  	    } 
+  	  } else {
+  	    # insert in third place; no bumping
+  	    bestAIC[3] <- aic
+  	    bestInteractionMods[3] <- form
+  	  }
+    }
+  }
+}
+
+bestAIC
+#bestInteractionMods
+
+
+bestInteractionMod3 <- lm(as.formula(bestInteractionMods[3]), data = train2)
+bestInteractionMod2 <- lm(as.formula(bestInteractionMods[2]), data = train2)
+bestInteractionMod1 <- lm(as.formula(bestInteractionMods[1]), data = train2)
+
+# Reduce
+bestInteractionMod3 <- step(bestInteractionMod3, trace = 0)
+bestInteractionMod2 <- step(bestInteractionMod2, trace = 0)
+bestInteractionMod1 <- step(bestInteractionMod1, trace = 0)
+bestInteractionMod1 <- update(
+  bestInteractionMod1, 
+  . ~ . - socialpostlag:emailclick - nonbrandclicks:fbposts -
+  displayimp:logSocialpostlag - fbposts)
+bestInteractionMod1 <- step(bestInteractionMod1, trace = 0)
+bestInteractionMod1 <- update(
+  bestInteractionMod1, 
+  . ~ . - rev2weekAgo:socialimp - Fbpostimp:youtubelag - Fbpostimp:nonbrandclicks - 
+  nonbrandclicks)
+bestInteractionMod1 <- step(bestInteractionMod1, trace = 0)
+
+summary(bestInteractionMod3)
+bestInteractionMod3 <- update(bestInteractionMod3, . ~ . - Fbpostimp)
+summary(bestInteractionMod3)
+summary(bestInteractionMod2)
+summary(bestInteractionMod1)
+
+bestInteractionMod3.p <- predict(bestInteractionMod3, test2)
+bestInteractionMod2.p <- predict(bestInteractionMod2, test2)
+bestInteractionMod1.p <- predict(bestInteractionMod1, test2)
+(bestInteractionMod3.sse <- sse(bestInteractionMod3.p, test2$revenue)) # 1.2046e+11
+(bestInteractionMod2.sse <- sse(bestInteractionMod2.p, test2$revenue)) # 9.0065e+10
+(bestInteractionMod1.sse <- sse(bestInteractionMod1.p, test2$revenue)) # 6.4422e+11
+currentBest$sse  # NO improvement
+
+(sqrt(mod.lm3.sse / nrow(test2)))
+sd(data2$revenue)
+```
+
+The current best model, mod.lm3, has an average error of $17,468 now less than the standard deviation of $23,945 but we can do better.  At this point though, it is reasonably clear that removing the outliers is improving the fit, so work will continue using this data set rather than the one with the outliers left in.
+
+### Examine current best model diagnostics
+Before moving on, check the current best model's diagnostics to see if there are any clear problems.
+```{r diagnostics}
+par(mfrow = c(2, 2))
+plot(mod.lm3)
+
+# Reasonably good diagnostics, though pt 116 clearly has disproportionate influence.
+# Examine:
+train2['116', ]
+which(rownames(train2) == '116')
+
+# Plot the data point in question in red to compare:
+par(mfrow = c(3, 3))
+for (i in 1:ncol(train2)) {
+  plot(train2[, i], main = names(train2)[i])
+  points(88, train2[88, i], pch = 16, col = 2)
+#  if (i %% 9 == 0) { pause() }   # commmented out for knitr
+}
+```
+
+This record has an unusually high value for both Fblikes and Fbengage. We can try transforming these predictors, or potentially removing these outliers
+```{r inspect_outlier}
+hist(data2$Fblikes)
+sort(scale(data2$Fblikes))
+hist(data2$Fbengage)
+sort(scale(data2$Fbengage))
+```
+
+....continued in nuggetAnalysis3.R
+
+
+```{r save}
+#save.image('~/Desktop/cbtnuggetsbusinessanalyticsproject/revenue/nuggets2.RData')
+```
